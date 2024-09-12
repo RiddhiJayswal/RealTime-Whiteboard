@@ -1,0 +1,18 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+.tool-img {
+   height: 4rem;
+}
+.toolbar{
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+.toolbar-options{
+    display: flex;
+}
