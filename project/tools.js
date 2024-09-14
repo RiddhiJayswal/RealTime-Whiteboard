@@ -1,3 +1,25 @@
+
+document.querySelector('.cross').addEventListener('click', function() {
+    const toolbar = document.querySelector('.toolbar');
+    if (toolbar.classList.contains('hidden')) {
+        toolbar.classList.remove('hidden');
+        toolbar.classList.add('visible');
+    } else {
+        toolbar.classList.remove('visible');
+        toolbar.classList.add('hidden');
+    }
+});
+
+// Example JavaScript to toggle the .active class
+document.querySelectorAll('.tool').forEach(tool => {
+    tool.addEventListener('click', function() {
+        // Remove .active class from all tools
+        document.querySelectorAll('.tool').forEach(t => t.classList.remove('active'));
+        // Add .active class to the clicked tool
+        this.classList.add('active');
+    });
+});
+
 let toolsArr = document.querySelectorAll(".tool");
 
 let currentTool = "pencil";  

@@ -1,19 +1,75 @@
-* {
-    box-sizing: border-box;
+/* Add this to your existing CSS files */
+
+.toolbar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px auto; /* Center horizontally with auto margins */
+    width: calc(100% - 380px); 
 }
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
+
+/* cross.css */
+.cross {
+    display: inline-block;
+    padding: 30px 30px;
+    background-color: #a6c7d1;
+    color: white;
+    font-size: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 50px;
+    margin: 10px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
 }
+
+.cross:hover {
+    background-color: #a9d7e9;
+    transform: scale(1.1);
+}
+
+/* main.css */
 .tool-img {
-   height: 4rem;
+    height: 3rem;
+    width: 3rem;
+    margin-right: 2rem;
+    transition: transform 0.3s;
 }
-.toolbar{
+
+.toolbar {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 2rem;
+    height: 18vh;
+    margin: 0 190px; 
+    border: 2px solid rgb(153, 160, 149);
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    padding: 10px;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
 }
-.toolbar-options{
+
+.toolbar.hidden {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.toolbar.visible {
+    max-height: 18vh;
+    opacity: 1;
+}
+
+.active {
+    width: 67px;
+    text-align: center;
+    padding: 7px;
+    border-radius: 50px;
+    box-sizing: border-box;
+    background-color: rgb(150, 204, 218);
+}
+
+.toolbar-options {
     display: flex;
 }
 
@@ -59,7 +115,7 @@ body {
     position: absolute;
     right: 10px;
     top: 5px;
-    color: #e74c3c;
+    color: #dfcfcd;
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s ease;
