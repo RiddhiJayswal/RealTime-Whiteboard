@@ -1,32 +1,33 @@
-// Select the element by class name (use . for classes)
 let toolsArr = document.querySelectorAll(".tool");
 
-let currentTool = "pencil";  // Moved this outside to be accessible globally
+let currentTool = "pencil";  
 
 // Add event listener to each tool
 for (let i = 0; i < toolsArr.length; i++) {
-    toolsArr[i].addEventListener("click", function () {
+    toolsArr[i].addEventListener("click", function (e) {
         const toolName = toolsArr[i].id; // Fixed typo
         if (toolName == "pencil") {
-            currentTool = "pencil";
             tool.strokeStyle = "black"; // Set stroke style to black for the pencil
         } else if (toolName == "eraser") {
             currentTool = "eraser";
             tool.strokeStyle = "white"; // Set stroke style to white for the eraser
         } else if (toolName == "download") {
+            currentTool="download";
+            downloadFile();
             console.log("clicked dwn");
         } else if (toolName == "sticky") {
             currentTool = "sticky";
             createSticky();
-            
         } else if (toolName == "upload") {
             currentTool = "upload";
             uploadFile();
-
         } else if (toolName == "undo") {
-            console.log("clicked");
+            currentTool = "undo";
+            undoFN();
         } else if (toolName == "redo") {
             console.log("clicked");
+            currentTool = "redo";
+            redoFN();
         }
     });
 }
@@ -40,16 +41,29 @@ canvas.width = window.innerWidth;
 let tool = canvas.getContext("2d");
 
 // Drawing state
+let undostack = [];
+let redostack = [];
 let isDrawing = false;
+
+/// Variables for start coordinates
+let sidx, sidy;
 
 // Track mousedown event
 canvas.addEventListener("mousedown", function (e) {
-    let sidx = e.clientX;
-    let sidy = e.clientY;
+    sidx = e.clientX; // Store the starting X position
+    sidy = e.clientY; // Store the starting Y position
     let toolbarHeight = getYDelta();
     tool.beginPath(); // Start the path only once, on mousedown
     tool.moveTo(sidx, sidy - toolbarHeight);
     isDrawing = true;  // Set drawing state to true
+    
+    // Push the initial point to undostack
+    let pointdec = {
+        x: sidx,
+        y: sidy - toolbarHeight,
+        desc: "md"
+    };
+    undostack.push(pointdec);
 });
 
 // Track mousemove event
@@ -70,7 +84,16 @@ canvas.addEventListener("mousemove", function (e) {
 
     tool.lineTo(eidx, eidy - toolbarHeight); // Draw the line
     tool.stroke(); // Render the line
+    
+    // Push the current point to undostack
+    let pointdec = {
+        x: eidx,
+        y: eidy - toolbarHeight,
+        desc: "mn"
+    };
+    undostack.push(pointdec);
 });
+
 
 // Track mouseup event
 canvas.addEventListener("mouseup", function (e) {
@@ -84,94 +107,107 @@ function getYDelta() {
     return heightOfToolbar;
 }
 
-// Function to create a sticky note
-function createSticky() {
+// for displaying sticky note
+function createOuterShell(textarea = null) {
     // Create sticky note elements
     let stickyDiv = document.createElement("div");
     let navDiv = document.createElement("div");
     let closeDiv = document.createElement("div");
     let minimizeDiv = document.createElement("div");
-    let textarea = document.createElement("textarea");
 
     // Set attributes and inner text for buttons
     stickyDiv.setAttribute("class", "sticky");
     navDiv.setAttribute("class", "nav");
     closeDiv.setAttribute("class", "close");
     minimizeDiv.setAttribute("class", "minimize");
-    textarea.setAttribute("class", "textarea");
 
     closeDiv.innerText = "x";
     minimizeDiv.innerText = "-";
 
     // Append elements to the sticky note structure
     stickyDiv.appendChild(navDiv);
-    stickyDiv.appendChild(textarea);
     navDiv.appendChild(minimizeDiv);
     navDiv.appendChild(closeDiv);
-    
+
     // Add the sticky note to the page
     document.body.appendChild(stickyDiv);
 
     // Close functionality
-    let isMinimized=false;
+    let isMinimized = false;
     closeDiv.addEventListener("click", function () {
         stickyDiv.remove();
     });
-    
+
     // Minimize functionality
-minimizeDiv.addEventListener("click", function () {
-    if (!isMinimized) {
-        textarea.style.display = "none";   // Hide the textarea
-        stickyDiv.style.height = "30px";   // Shrink the sticky to show only the nav bar
-    } else {
-        textarea.style.display = "block";  // Show the textarea
-        stickyDiv.style.height = "200px";  // Expand the sticky note back to original height
-    }
-    isMinimized = !isMinimized;  // Toggle the minimized state
-});
+    minimizeDiv.addEventListener("click", function () {
+        if (!isMinimized) {
+            if (textarea) {
+                textarea.style.display = "none"; // Hide the textarea
+            }
+            stickyDiv.style.height = "30px"; // Shrink the sticky to show only the nav bar
+        } else {
+            if (textarea) {
+                textarea.style.display = "block"; // Show the textarea
+            }
+            stickyDiv.style.height = "200px"; // Expand the sticky note back to original height
+        }
+        isMinimized = !isMinimized; // Toggle the minimized state
+    });
 
+    // Functionality to move sticky notes
+    let isStickyDown = false;
+    let initialX, initialY;
 
-// functionality to move sticky notes
-//navbar->mousedown,mouseup,mousemove
-let isStickyDown = false;
-let initialX, initialY;
+    // When the mouse is pressed down on the nav (header) of the sticky note
+    navDiv.addEventListener("mousedown", function (e) {
+        initialX = e.clientX;
+        initialY = e.clientY;
+        isStickyDown = true;
+    });
 
-// When the mouse is pressed down on the nav (header) of the sticky note
-navDiv.addEventListener("mousedown", function (e) {
-    initialX = e.clientX;
-    initialY = e.clientY;
-    isStickyDown = true;
-});
+    // Track mouse movement across the document
+    document.addEventListener("mousemove", function (e) {
+        if (isStickyDown) {
+            let finalX = e.clientX;
+            let finalY = e.clientY;
 
-// Track mouse movement across the document
-document.addEventListener("mousemove", function (e) {
-    if (isStickyDown) {
-        let finalX = e.clientX;
-        let finalY = e.clientY;
+            let dx = finalX - initialX; // Change in X
+            let dy = finalY - initialY; // Change in Y
 
-        let dx = finalX - initialX; // Change in X
-        let dy = finalY - initialY; // Change in Y
+            // Get current position from the style (not from getBoundingClientRect)
+            let currentTop = parseInt(stickyDiv.style.top) || 0;
+            let currentLeft = parseInt(stickyDiv.style.left) || 0;
 
-        // Get current position from the style (not from getBoundingClientRect)
-        let currentTop = parseInt(stickyDiv.style.top) || 0;
-        let currentLeft = parseInt(stickyDiv.style.left) || 0;
+            // Update the position of the sticky note
+            stickyDiv.style.top = (currentTop + dy) + "px"; // Update top position
+            stickyDiv.style.left = (currentLeft + dx) + "px"; // Update left position
 
-        // Update the position of the sticky note
-        stickyDiv.style.top = (currentTop + dy) + "px"; // Update top position
-        stickyDiv.style.left = (currentLeft + dx) + "px"; // Update left position
+            // Update initial positions for the next movement
+            initialX = finalX;
+            initialY = finalY;
+        }
+    });
 
-        // Update initial positions for the next movement
-        initialX = finalX;
-        initialY = finalY;
-    }
-});
+    // When the mouse is released, stop moving the sticky note
+    document.addEventListener("mouseup", function () {
+        isStickyDown = false;
+    });
 
-
-// When the mouse is released, stop moving the sticky note
-document.addEventListener("mouseup", function () {
-    isStickyDown = false;
-});
+    return stickyDiv;
 }
+
+
+
+// for displaying img on sticky note
+function createSticky() {
+    let textarea = document.createElement("textarea");
+    textarea.setAttribute("class", "textarea");
+
+    let stickyDiv = createOuterShell(textarea); // Pass textarea to be controlled for minimizing
+    stickyDiv.appendChild(textarea);
+}
+
+
 
 // upload file function
 let inputTag = document.querySelector(".input-tag");
@@ -188,15 +224,101 @@ function uploadFile(){
     let img = document.createElement("img");
     let url = URL.createObjectURL(data);
     img.src = url;
-    img.height = 100;
+    img.setAttribute("class","upload-img")
 
     // add to body
-    document.body.appendChild(img);
+    let stickyDiv = createOuterShell();
+    stickyDiv.appendChild(img);
      });
    
     
+}
+
+
+// download file function
+function downloadFile() {
+    console.log("download clicked");
+
+    // Create an off-screen canvas
+    let offscreenCanvas = document.createElement("canvas");
+    offscreenCanvas.width = canvas.width;
+    offscreenCanvas.height = canvas.height;
+
+    // Get the context of the off-screen canvas
+    let offscreenContext = offscreenCanvas.getContext("2d");
+
+    // Fill the background with white
+    offscreenContext.fillStyle = "white";
+    offscreenContext.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+    // Draw the actual canvas content over the white background
+    offscreenContext.drawImage(canvas, 0, 0);
+
+    // Create an anchor element for downloading
+    let a = document.createElement("a");
+
+    // Set the filename for download
+    a.download = "file.jpeg";
+
+    // Convert the off-screen canvas to a data URL (JPEG format)
+    let url = offscreenCanvas.toDataURL("image/jpeg", 1.0);
+
+    // Set the URL as the href of the anchor
+    a.href = url;
+
+    // Trigger a click on the anchor to download the image
+    a.click();
+
+    // Remove the anchor after triggering the download
+    a.remove();
+}
 
 
 
+// undo function
+function undoFN(){
+    tool.clearRect(0,0,canvas.width,canvas.height);
+    // last removal
+    if(undostack.length>0){
+        undostack.pop();
+        redostack.push(undostack.pop());
+    }
+    // redraw
+    for(let i=0;i<undostack.length;i++){
+        let{ x , y , desc } = undostack[i];
+        if(desc == "md"){
+            tool.beginPath();
+            tool.moveTo(x,y);
+        }else if(desc == "mn"){
+            tool.lineTo(x,y);
+            tool.stroke();
+        }
+    }
+}
 
+function redoFN() {
+    // Check if there are actions to redo
+    if (redostack.length > 0) {
+        // Move the last action from redostack back to undostack
+        undostack.push(redostack.pop());
+        
+        // Clear the canvas
+        tool.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Redraw the canvas from undostack
+        let isDrawing = false; // Track the drawing state
+        for (let i = 0; i < undostack.length; i++) {
+            let { x, y, desc } = undostack[i];
+            if (desc === "md") {
+                tool.beginPath();
+                tool.moveTo(x, y); // Move to the starting point
+                isDrawing = true; // Start drawing
+            } else if (desc === "mn") {
+                if (isDrawing) {
+                    tool.lineTo(x, y); // Draw a line to the current point
+                    tool.stroke();
+                }
+            }
+        }
+    }
 }

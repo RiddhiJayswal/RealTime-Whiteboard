@@ -104,3 +104,7 @@ body {
     display: none;
 
 }
+.upload-img{
+     width: 100%;
+    height: calc(100% - 30px);
+}
