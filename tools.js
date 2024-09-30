@@ -79,11 +79,12 @@ canvas.addEventListener("mousedown", function (e) {
     tool.moveTo(sidx, sidy - toolbarHeight);
     isDrawing = true;  // Set drawing state to true
     
-    // Push the initial point to undostack
+    // Push the initial point to undostack with tool information
     let pointdec = {
         x: sidx,
         y: sidy - toolbarHeight,
-        desc: "md"
+        desc: "md",
+        tool: currentTool === "eraser" ? "eraser" : "pencil"  // Add the current tool to the stack
     };
     undostack.push(pointdec);
 });
@@ -107,11 +108,12 @@ canvas.addEventListener("mousemove", function (e) {
     tool.lineTo(eidx, eidy - toolbarHeight); // Draw the line
     tool.stroke(); // Render the line
     
-    // Push the current point to undostack
+    // Push the current point to undostack with tool information
     let pointdec = {
         x: eidx,
         y: eidy - toolbarHeight,
-        desc: "mn"
+        desc: "mn",
+        tool: currentTool === "eraser" ? "eraser" : "pencil"  // Add the current tool to the stack
     };
     undostack.push(pointdec);
 });
@@ -298,49 +300,67 @@ function downloadFile() {
 
 
 // undo function
+// undo function
 function undoFN(){
-    tool.clearRect(0,0,canvas.width,canvas.height);
-    // last removal
-    if(undostack.length>0){
-        undostack.pop();
-        redostack.push(undostack.pop());
+    tool.clearRect(0, 0, canvas.width, canvas.height);
+    // Last removal
+    if (undostack.length > 0) {
+        redostack.push(undostack.pop());  // Move to redo stack
     }
-    // redraw
-    for(let i=0;i<undostack.length;i++){
-        let{ x , y , desc } = undostack[i];
-        if(desc == "md"){
+
+    // Redraw everything in the undostack
+    for (let i = 0; i < undostack.length; i++) {
+        let { x, y, desc, tool: toolUsed } = undostack[i];  // Include tool information
+
+        if (toolUsed === "eraser") {
+            tool.strokeStyle = "white";
+            tool.lineWidth = 10; // Adjust as needed
+        } else {
+            tool.strokeStyle = "black";
+            tool.lineWidth = 2; // Default pencil width
+        }
+
+        if (desc == "md") {
             tool.beginPath();
-            tool.moveTo(x,y);
-        }else if(desc == "mn"){
-            tool.lineTo(x,y);
+            tool.moveTo(x, y);
+        } else if (desc == "mn") {
+            tool.lineTo(x, y);
             tool.stroke();
         }
     }
 }
 
+// redo function
 function redoFN() {
     // Check if there are actions to redo
     if (redostack.length > 0) {
         // Move the last action from redostack back to undostack
         undostack.push(redostack.pop());
-        
+
         // Clear the canvas
         tool.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         // Redraw the canvas from undostack
-        let isDrawing = false; // Track the drawing state
         for (let i = 0; i < undostack.length; i++) {
-            let { x, y, desc } = undostack[i];
-            if (desc === "md") {
+            let { x, y, desc, tool: toolUsed } = undostack[i];  // Include tool information
+
+            // Set correct tool settings based on what was used (eraser or pencil)
+            if (toolUsed === "eraser") {
+                tool.strokeStyle = "white";
+                tool.lineWidth = 10; // Eraser's width
+            } else {
+                tool.strokeStyle = "black";
+                tool.lineWidth = 2; // Pencil's width
+            }
+
+            if (desc == "md") {
                 tool.beginPath();
-                tool.moveTo(x, y); // Move to the starting point
-                isDrawing = true; // Start drawing
-            } else if (desc === "mn") {
-                if (isDrawing) {
-                    tool.lineTo(x, y); // Draw a line to the current point
-                    tool.stroke();
-                }
+                tool.moveTo(x, y);
+            } else if (desc == "mn") {
+                tool.lineTo(x, y);
+                tool.stroke();
             }
         }
     }
 }
+
