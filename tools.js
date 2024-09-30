@@ -99,7 +99,7 @@ canvas.addEventListener("mousemove", function (e) {
 
     if (currentTool === "eraser") {
         tool.strokeStyle = "white"; // Set the stroke to white for eraser
-        tool.lineWidth = 10; // Optionally, make the eraser wider
+        tool.lineWidth = 40; // Optionally, make the eraser wider
     } else {
         tool.strokeStyle = "black"; // Set to black for drawing
         tool.lineWidth = 2; // Default pencil width
