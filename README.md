@@ -22,7 +22,4 @@ To set up the Realtime Whiteboard locally, follow these steps:
 ![Main Interface](https://drive.google.com/uc?export=view&id=1nsiVsYDBUxJ7QePjTsQc1rkcbybpux4C)  
 *This screenshot displays the main interface of the Realtime Whiteboard, showcasing various tools and functionalities.*
 
-### Downloaded File
-[Download PDF](https://drive.google.com/uc?export=view&id=1RqTknqvHF-2Li2qVYzzfwUYDu8xZgFoS)
-*When we press the key of download in Whhiteboard then the file gets automatically download in the device.*
-*
+
