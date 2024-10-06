@@ -8,6 +8,7 @@ The **Realtime Whiteboard** is a collaborative drawing and note-taking applicati
 - **Eraser Tool**: An eraser tool with adjustable sizes for precise corrections.
 - **Sticky Notes/Images**: Add sticky notes and images for enhanced interactivity.
 - **Undo-Redo Functionality**: Easily undo or redo actions using a stack implemented with arrays for a seamless user experience.
+- **Download Functionality**: We can doenload the notes using this functionality.
 
 ## Installation
 To set up the Realtime Whiteboard locally, follow these steps:
